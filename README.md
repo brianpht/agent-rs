@@ -187,7 +187,7 @@ println!("Errors: {}", error_counter.get());
 
 ## Performance
 
-Benchmarks on x86_64 Linux (AMD Ryzen):
+Benchmarks on a modern x86_64 system:
 
 | Operation | Time | Throughput |
 |-----------|------|------------|

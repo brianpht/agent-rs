@@ -1,6 +1,6 @@
 # Copilot Instructions
 
-> **Deterministic, allocation-free, lock-free transport core.**
+> **Deterministic, allocation-free, lock-free agent core.**
 >
 > ⚠️ If a change increases latency variance, allocation count, or branch entropy → **REJECT**.
 
@@ -9,11 +9,11 @@
 ## Critical Rules (Auto-Reject)
 
 ```
-❌ Mutex in transport
+❌ Mutex in agent runner
 ❌ HashMap in hot path
 ❌ % (modulo) in ring index → use & (capacity - 1)
 ❌ unwrap() in parsing
-❌ Trait object in packet processing
+❌ Trait object in duty cycle
 ❌ Allocation inside loop
 ❌ Sequence comparison using > → use wrapping_sub + half-range
 ❌ Vec growth / Box / String in hot path
@@ -23,7 +23,11 @@
 
 ## Hot Path Operations
 
-`AgentRunner::work_loop` | `AgentRunner::do_work` | `AgentInvoker::invoke` | `IdleStrategy::idle` | `BackoffIdleStrategy::idle_unconditional` | `Backoff state transitions (Spinning/Yielding/Parking)`
+### Agent Lifecycle
+`AgentRunner::work_loop` | `AgentRunner::do_work` | `AgentInvoker::invoke`
+
+### Idle Strategy
+`IdleStrategy::idle` | `BackoffIdleStrategy::idle_unconditional` | `Backoff state transitions (Spinning/Yielding/Parking)`
 
 **Requirements**: Allocation-free, O(1), Cache-local, Branch predictable, Single-writer
 
@@ -95,13 +99,13 @@ Allowed only if: measurable gain + benchmarked + invariants documented + fuzz-te
 
 ---
 
-## Performance Budget
+## Performance Targets
 
-| Metric | Target |
-|--------|--------|
-| Small packet latency | < 200ns |
-| Allocation | None |
-| Cache miss (steady) | None |
+| Metric                | Target         |
+|-----------------------|----------------|
+| Agent duty cycle      | < 200ns        |
+| Allocation            | No allocations |
+| Cache miss (steady)   | No cache misses |
 
 > Regression > 10% → rollback or justify. **Latency variance > average.**
 
