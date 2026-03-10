@@ -1,0 +1,42 @@
+[package]
+name = "agent-rs"
+version = "0.1.0"
+edition = "2024"
+description = "Agrona-style agent framework for Rust - deterministic, allocation-free"
+keywords = ["agent", "concurrent", "low-latency", "lock-free"]
+categories = ["concurrency", "asynchronous"]
+
+[features]
+default = []
+# Enable additional idle strategies
+full = []
+
+[dependencies]
+# No dependencies - zero-dependency crate
+
+[dev-dependencies]
+criterion = { version = "0.8.2", features = ["html_reports"] }
+
+[[bench]]
+name = "idle_strategy_bench"
+harness = false
+
+[[bench]]
+name = "agent_throughput_bench"
+harness = false
+
+[[bench]]
+name = "backoff_bench"
+harness = false
+
+[[example]]
+name = "simple_agent"
+
+[[example]]
+name = "counter_agent"
+
+[[example]]
+name = "multi_agent"
+
+[[example]]
+name = "controllable_idle"
