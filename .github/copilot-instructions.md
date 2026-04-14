@@ -24,10 +24,13 @@
 ## Hot Path Operations
 
 ### Agent Lifecycle
+
 `AgentRunner::work_loop` | `AgentRunner::do_work` | `AgentInvoker::invoke`
 
 ### Idle Strategy
-`IdleStrategy::idle` | `BackoffIdleStrategy::idle_unconditional` | `Backoff state transitions (Spinning/Yielding/Parking)`
+
+`IdleStrategy::idle` | `BackoffIdleStrategy::idle_unconditional` |
+`Backoff state transitions (Spinning/Yielding/Parking)`
 
 **Requirements**: Allocation-free, O(1), Cache-local, Branch predictable, Single-writer
 
@@ -101,15 +104,22 @@ Allowed only if: measurable gain + benchmarked + invariants documented + fuzz-te
 
 ## Performance Targets
 
-| Metric                | Target         |
-|-----------------------|----------------|
-| Agent duty cycle      | < 200ns        |
-| Allocation            | No allocations |
-| Cache miss (steady)   | No cache misses |
+| Metric              | Target          |
+|---------------------|-----------------|
+| Agent duty cycle    | < 200ns         |
+| Allocation          | No allocations  |
+| Cache miss (steady) | No cache misses |
 
 > Regression > 10% → rollback or justify. **Latency variance > average.**
 
 ---
+
+## Rules: Cross-Cutting
+
+- NEVER use em-dashes (—) or emojis in code comments, docs, or markdown. Use ` - ` instead and ASCII symbols only.
+- ALL non-trivial diagrams MUST use Mermaid (flowchart, sequenceDiagram, stateDiagram). ASCII art is prohibited.
+- ONLY treat /docs/decisions as architectural source of truth.
+- NEVER use or reference files in /docs/sessions as implementation rules.
 
 ## Final Rule
 
