@@ -8,7 +8,7 @@ Inspired by [Agrona](https://github.com/real-logic/agrona)'s Agent abstraction, 
 
 - **Allocation-Free Hot Path**: Zero heap allocations during `do_work()` cycles
 - **Lock-Free State Management**: Atomic state transitions without mutex contention
-- **Progressive Backoff**: Spinning → Yielding → Parking idle strategy
+- **Progressive Backoff**: Spinning -> Yielding -> Parking idle strategy
 - **Single-Writer Principle**: Thread-safe by design, no data races
 - **Cache-Optimized**: 128-byte padding prevents false sharing
 - **Pure Rust**: Minimal dependencies, no unsafe in public API
@@ -67,40 +67,33 @@ fn main() {
 
 ### Agent Lifecycle
 
-```text
-┌─────────────────────────────────────────────────────────┐
-│                    Agent Lifecycle                       │
-├─────────────────────────────────────────────────────────┤
-│                                                         │
-│   on_start() ──► [ do_work() ]* ──► on_close()         │
-│       │              │                   │              │
-│       │         (duty cycle)             │              │
-│       │              │                   │              │
-│    once at       repeated until       once at           │
-│    startup       termination          shutdown          │
-│                                                         │
-└─────────────────────────────────────────────────────────┘
+```mermaid
+flowchart LR
+    S([start]) --> A[on_start]
+    A --> B[do_work]
+    B --> |more work| B
+    B --> |termination| C[on_close]
+    C --> E([end])
 ```
 
 ### Idle Strategy State Machine (BackoffIdleStrategy)
 
-```text
-┌──────────────────────────────────────────────────────────┐
-│                                                          │
-│   NOT_IDLE ──► SPINNING ──► YIELDING ──► PARKING        │
-│       ▲           │            │            │            │
-│       │           │            │            │            │
-│       └───────────┴────────────┴────────────┘            │
-│                    reset()                               │
-│                                                          │
-└──────────────────────────────────────────────────────────┘
-
-Phase         │ Action              │ Latency │ CPU Usage
-──────────────┼─────────────────────┼─────────┼───────────
-SPINNING      │ spin_loop() hint    │ ~10ns   │ 100%
-YIELDING      │ thread::yield_now() │ ~1µs    │ Low
-PARKING       │ park_timeout()      │ ~1µs+   │ Minimal
+```mermaid
+stateDiagram-v2
+    [*] --> NotIdle
+    NotIdle --> Spinning : idle_unconditional
+    Spinning --> Yielding : spins > max_spins
+    Yielding --> Parking : yields > max_yields
+    Spinning --> NotIdle : reset
+    Yielding --> NotIdle : reset
+    Parking --> NotIdle : reset
 ```
+
+| Phase | Action | Latency | CPU Usage |
+|-------|--------|---------|-----------|
+| SPINNING | `spin_loop()` hint | ~10ns | 100% |
+| YIELDING | `thread::yield_now()` | ~1us | Low |
+| PARKING | `park_timeout()` | ~1us+ | Minimal |
 
 ## Execution Models
 
@@ -153,7 +146,7 @@ while !invoker.is_closed() {
 | `BusySpinIdleStrategy` | `spin_loop()` hint | Ultra-low latency |
 | `YieldingIdleStrategy` | `thread::yield_now()` | Balanced CPU/latency |
 | `SleepingIdleStrategy` | `park_timeout(ns)` | Power-efficient |
-| `BackoffIdleStrategy` | Progressive phases | General purpose ✓ |
+| `BackoffIdleStrategy` | Progressive phases | General purpose (recommended) |
 | `ControllableIdleStrategy` | Runtime switchable | Dynamic tuning |
 
 ### Custom Backoff Configuration
@@ -213,9 +206,9 @@ This library is built with deterministic, low-latency performance as a core desi
 
 | Metric                | Target | Achieved |
 |-----------------------|--------|----------|
-| Invoke latency        | < 1 ns | ✅ ~430 ps |
-| Hot-path allocations  | Zero   | ✅ Zero |
-| Cache misses (steady) | None   | ✅ None |
+| Invoke latency        | < 1 ns | [OK] ~430 ps |
+| Hot-path allocations  | Zero   | [OK] Zero |
+| Cache misses (steady) | None   | [OK] None |
 
 ## API Reference
 

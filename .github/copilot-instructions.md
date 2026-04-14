@@ -2,21 +2,21 @@
 
 > **Deterministic, allocation-free, lock-free agent core.**
 >
-> ⚠️ If a change increases latency variance, allocation count, or branch entropy → **REJECT**.
+> [!] If a change increases latency variance, allocation count, or branch entropy -> **REJECT**.
 
 ---
 
 ## Critical Rules (Auto-Reject)
 
 ```
-❌ Mutex in agent runner
-❌ HashMap in hot path
-❌ % (modulo) in ring index → use & (capacity - 1)
-❌ unwrap() in parsing
-❌ Trait object in duty cycle
-❌ Allocation inside loop
-❌ Sequence comparison using > → use wrapping_sub + half-range
-❌ Vec growth / Box / String in hot path
+[NO] Mutex in agent runner
+[NO] HashMap in hot path
+[NO] % (modulo) in ring index -> use & (capacity - 1)
+[NO] unwrap() in parsing
+[NO] Trait object in duty cycle
+[NO] Allocation inside loop
+[NO] Sequence comparison using > -> use wrapping_sub + half-range
+[NO] Vec growth / Box / String in hot path
 ```
 
 ---
@@ -39,12 +39,12 @@
 ## Sequence Arithmetic
 
 ```rust
-// ✅ CORRECT
+// CORRECT
 a.wrapping_add(1)
 a.wrapping_sub(b)
 // Half-range comparison for sequence ordering
 
-// ❌ FORBIDDEN
+// FORBIDDEN
 a > b
 a - b
 ```
@@ -54,10 +54,10 @@ a - b
 ## Ring Buffer
 
 ```rust
-// ✅ Capacity: power-of-two ONLY
+// Capacity: power-of-two ONLY
 index = seq & (capacity - 1)
 
-// ❌ NEVER
+// NEVER
 index = seq % capacity
 ```
 
@@ -83,7 +83,7 @@ index = seq % capacity
 
 ## Cache & Branches
 
-- Hot structs ≤ 64 bytes
+- Hot structs <= 64 bytes
 - Hot fields first in struct
 - Fast path first, error path `#[cold]`
 - No pointer chasing
@@ -92,7 +92,7 @@ index = seq % capacity
 
 ## Atomics (if needed)
 
-`Relaxed` → counters | `Release` → publish | `Acquire` → consume | `SeqCst` → **NEVER in hot path**
+`Relaxed` -> counters | `Release` -> publish | `Acquire` -> consume | `SeqCst` -> **NEVER in hot path**
 
 ---
 
@@ -110,7 +110,7 @@ Allowed only if: measurable gain + benchmarked + invariants documented + fuzz-te
 | Allocation          | No allocations  |
 | Cache miss (steady) | No cache misses |
 
-> Regression > 10% → rollback or justify. **Latency variance > average.**
+> Regression > 10% -> rollback or justify. **Latency variance > average.**
 
 ---
 

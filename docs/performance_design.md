@@ -61,7 +61,7 @@ This project defines **two layers** of performance governance:
 
 ```
 If enforcement rules conflict with architecture
-    → Architecture must be updated first
+    -> Architecture must be updated first
 
 Benchmarks are the final authority.
 ```
@@ -77,7 +77,7 @@ Benchmarks are the final authority.
 | Memory model          | Single-writer, multiple-reader                    |
 | Priority              | Deterministic latency > maximum throughput        |
 
-> ⚠️ **Note**: Agent `do_work()` is always called from the same thread. Cross-thread communication uses atomics only for state transitions.
+> **NOTE:** Agent `do_work()` is always called from the same thread. Cross-thread communication uses atomics only for state transitions.
 
 ---
 
@@ -85,15 +85,15 @@ Benchmarks are the final authority.
 
 | Metric                   | Target       | Current      | Status |
 |--------------------------|--------------|--------------|--------|
-| Agent duty cycle         | < 200 ns     | ~0.5 ns      | ✅      |
-| Invoker throughput       | > 1 Gelem/s  | 2.2 Gelem/s  | ✅      |
-| Idle strategy overhead   | < 10 ns      | ~1-5 ns      | ✅      |
-| Backoff reset            | < 5 ns       | ~1 ns        | ✅      |
-| State transition         | < 50 ns      | ~10-30 ns    | ✅      |
+| Agent duty cycle         | < 200 ns     | ~0.5 ns      | [OK]   |
+| Invoker throughput       | > 1 Gelem/s  | 2.2 Gelem/s  | [OK]   |
+| Idle strategy overhead   | < 10 ns      | ~1-5 ns      | [OK]   |
+| Backoff reset            | < 5 ns       | ~1 ns        | [OK]   |
+| State transition         | < 50 ns      | ~10-30 ns    | [OK]   |
 
 ### Regression Policy
 
-- **> 10% regression** → requires justification
+- **> 10% regression** - requires justification
 - **Tail latency** matters more than average latency
 - **Latency variance** is a correctness concern
 
@@ -107,16 +107,16 @@ Benchmarks are the final authority.
 Correctness > Determinism > Latency > Throughput
 ```
 
-> ⚠️ **Unbounded memory or nondeterministic latency is a correctness failure.**
+> **[!] Unbounded memory or nondeterministic latency is a correctness failure.**
 
 #### Must Be Deterministic Under
 
 | Condition              | Required |
 |------------------------|----------|
-| High work rate         | ✅        |
-| Zero work (idle)       | ✅        |
-| Burst patterns         | ✅        |
-| Extended idle periods  | ✅        |
+| High work rate         | [OK]     |
+| Zero work (idle)       | [OK]     |
+| Burst patterns         | [OK]     |
+| Extended idle periods  | [OK]     |
 
 **No randomness in agent lifecycle.**
 
@@ -133,13 +133,13 @@ Correctness > Determinism > Latency > Throughput
 #### Thread Ownership Model
 
 ```rust
-// ✅ Correct: Single-writer
+// Correct: Single-writer
 impl AgentInvoker {
     // All methods called from same thread
     fn invoke(&mut self) -> u32 { ... }
 }
 
-// ✅ Correct: Cross-thread via atomics only
+// Correct: Cross-thread via atomics only
 impl AgentRunner {
     fn close(&self) {  // &self, not &mut self
         self.state.store(Stopping, Ordering::Release);
@@ -155,11 +155,11 @@ impl AgentRunner {
 
 | Operation              | Allocation Allowed? |
 |------------------------|---------------------|
-| `do_work()`            | ❌                   |
-| `idle()`               | ❌                   |
-| `invoke()`             | ❌                   |
-| `reset()`              | ❌                   |
-| State transitions      | ❌                   |
+| `do_work()`            | [NO]                |
+| `idle()`               | [NO]                |
+| `invoke()`             | [NO]                |
+| `reset()`              | [NO]                |
+| State transitions      | [NO]                |
 
 - All buffers **preallocated at initialization**
 - Fixed-size strings (`RoleName`, `Alias`)
@@ -186,7 +186,7 @@ impl AgentRunner {
 | Hot fields first in struct            | Required |
 | Avoid pointer chasing                 | Required |
 | Separate hot/cold data                | Required |
-| Hot structs ≤ 64 bytes                | Required |
+| Hot structs <= 64 bytes               | Required |
 
 #### Cache Line Padding Example
 
@@ -211,7 +211,7 @@ pub struct BackoffIdleStrategy {
 
 ### 5. Branch Predictability
 
-**Mispredict penalty**: ~15–20 cycles (~5–7 ns)
+**Mispredict penalty**: ~15-20 cycles (~5-7 ns)
 
 | Rule                             | Priority       |
 |----------------------------------|----------------|
@@ -284,10 +284,15 @@ fn is_running(&self) -> bool {
 
 #### Phase Progression
 
-```text
-NOT_IDLE → SPINNING → YIELDING → PARKING
-    ↑__________|__________|_________|
-              reset()
+```mermaid
+stateDiagram-v2
+    [*] --> NotIdle
+    NotIdle --> Spinning : idle_unconditional
+    Spinning --> Yielding : spins > max_spins
+    Yielding --> Parking : yields > max_yields
+    Spinning --> NotIdle : reset
+    Yielding --> NotIdle : reset
+    Parking --> NotIdle : reset
 ```
 
 #### Phase Characteristics
@@ -323,10 +328,10 @@ park_period_ns = min(park_period_ns * 2, max_park_period_ns);
 #### Indexing
 
 ```rust
-// ✅ Correct
+// Correct
 index = seq & (capacity - 1)
 
-// ❌ Forbidden
+// Forbidden
 index = seq % capacity
 ```
 
@@ -382,12 +387,12 @@ impl Alias {
 
 | Condition                 | Required |
 |---------------------------|----------|
-| Measurable gain proven    | ✅        |
-| Benchmarked before/after  | ✅        |
-| Invariants documented     | ✅        |
-| Fuzz-tested               | ✅        |
+| Measurable gain proven    | [OK]     |
+| Benchmarked before/after  | [OK]     |
+| Invariants documented     | [OK]     |
+| Fuzz-tested               | [OK]     |
 
-> ❌ **Unsafe without justification → reject.**
+> **[NO] Unsafe without justification -> reject.**
 
 #### Current Unsafe Usage
 
@@ -412,7 +417,7 @@ impl Alias {
 #### Investigation Trigger
 
 ```
-p99 > p50 × 2 → investigate
+p99 > p50 x 2 -> investigate
 ```
 
 ---
@@ -430,4 +435,3 @@ Architecture defines intent.
 Enforcement ensures invariants.
 Benchmarks validate reality.
 ```
-

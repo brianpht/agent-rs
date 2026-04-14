@@ -7,10 +7,15 @@
 //! false sharing when multiple threads use different strategy instances.
 //!
 //! # State Machine (BackoffIdleStrategy)
-//! ```text
-//! NOT_IDLE → SPINNING → YIELDING → PARKING
-//!     ↑___________|___________|_________|
-//!               reset()
+//! ```mermaid
+//! stateDiagram-v2
+//!     [*] --> NotIdle
+//!     NotIdle --> Spinning : idle_unconditional
+//!     Spinning --> Yielding : spins > max_spins
+//!     Yielding --> Parking : yields > max_yields
+//!     Spinning --> NotIdle : reset
+//!     Yielding --> NotIdle : reset
+//!     Parking --> NotIdle : reset
 //! ```
 
 use core::fmt;
@@ -509,7 +514,7 @@ struct BackoffPostPad {
 /// ```
 ///
 /// # Exponential Backoff
-/// Park period doubles each iteration: `min_park_ns → 2x → 4x → ... → max_park_ns`
+/// Park period doubles each iteration: `min_park_ns -> 2x -> 4x -> ... -> max_park_ns`
 ///
 /// # Cache Line Padding
 /// Uses 128 bytes total padding to prevent false sharing.
